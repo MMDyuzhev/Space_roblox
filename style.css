@@ -412,9 +412,14 @@ footer {
 
 /* Сохранённые чертежи */
 .saved-drawings {
+    display: none;
     margin-top: 20px;
     padding-top: 15px;
     border-top: 2px solid rgba(138, 43, 226, 0.3);
+}
+
+.saved-drawings.visible {
+    display: block;
 }
 
 .saved-drawings h3 {

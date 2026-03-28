@@ -26,7 +26,6 @@ function createMeteor() {
 setInterval(createMeteor, 2000);
 
 // Рисовалка для Инженера Гайки
-const engineerCard = document.querySelectorAll('.character-card')[3];
 const modal = document.getElementById('drawingModal');
 const closeModal = document.getElementById('closeModal');
 const canvas = document.getElementById('drawingCanvas');
@@ -38,11 +37,66 @@ const clearCanvasBtn = document.getElementById('clearCanvas');
 const saveCanvasBtn = document.getElementById('saveCanvas');
 const toggleDrawingsBtn = document.getElementById('toggleDrawings');
 const drawingsGrid = document.getElementById('drawingsGrid');
+const savedDrawingsSection = document.getElementById('savedDrawings');
 
 let isDrawing = false;
 let isEraser = false;
 let lastX = 0;
 let lastY = 0;
+
+// Ждём загрузки DOM
+document.addEventListener('DOMContentLoaded', initDrawing);
+
+function initDrawing() {
+    // Находим карточку Инженера Гайки по имени
+    const cards = document.querySelectorAll('.character-card');
+    let targetCard = null;
+    cards.forEach(card => {
+        const name = card.querySelector('.character-name');
+        if (name && name.textContent.includes('Гайка')) {
+            targetCard = card;
+        }
+    });
+    
+    if (!targetCard) return;
+    
+    // Настройка размера canvas
+    resizeCanvas();
+
+    // Открытие модального окна
+    targetCard.addEventListener('click', () => {
+        modal.classList.add('active');
+        resizeCanvas();
+        loadSavedDrawings();
+    });
+    
+    // Закрытие модального окна
+    closeModal.addEventListener('click', () => {
+        modal.classList.remove('active');
+    });
+
+    // Закрытие по клику вне контента
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.classList.remove('active');
+        }
+    });
+
+    // События кнопок
+    saveCanvasBtn.addEventListener('click', saveDrawing);
+    toggleDrawingsBtn.addEventListener('click', toggleDrawings);
+    eraserBtn.addEventListener('click', toggleEraser);
+    clearCanvasBtn.addEventListener('click', clearCanvas);
+
+    // События рисования
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
+    canvas.addEventListener('touchstart', handleTouchStart);
+    canvas.addEventListener('touchmove', handleTouchMove);
+    canvas.addEventListener('touchend', stopDrawing);
+}
 
 // Настройка размера canvas
 function resizeCanvas() {
@@ -56,27 +110,6 @@ function resizeCanvas() {
     ctx.lineJoin = 'round';
 }
 
-resizeCanvas();
-
-// Открытие модального окна
-engineerCard.addEventListener('click', () => {
-    modal.classList.add('active');
-    resizeCanvas();
-    loadSavedDrawings();
-});
-
-// Закрытие модального окна
-closeModal.addEventListener('click', () => {
-    modal.classList.remove('active');
-});
-
-// Закрытие по клику вне контента
-modal.addEventListener('click', (e) => {
-    if (e.target === modal) {
-        modal.classList.remove('active');
-    }
-});
-
 // Рисование
 function startDrawing(e) {
     isDrawing = true;
@@ -85,20 +118,20 @@ function startDrawing(e) {
 
 function draw(e) {
     if (!isDrawing) return;
-    
+
     const [x, y] = getCoordinates(e);
-    
+
     ctx.beginPath();
     ctx.moveTo(lastX, lastY);
     ctx.lineTo(x, y);
     ctx.lineWidth = brushSize.value;
-    
+
     if (isEraser) {
         ctx.strokeStyle = '#1e1e3f';
     } else {
         ctx.strokeStyle = colorPicker.value;
     }
-    
+
     ctx.stroke();
     [lastX, lastY] = [x, y];
 }
@@ -118,39 +151,18 @@ function getCoordinates(e) {
     return [e.offsetX, e.offsetY];
 }
 
-// События мыши
-canvas.addEventListener('mousedown', startDrawing);
-canvas.addEventListener('mousemove', draw);
-canvas.addEventListener('mouseup', stopDrawing);
-canvas.addEventListener('mouseout', stopDrawing);
-
-// События тачскрина
-canvas.addEventListener('touchstart', (e) => {
+function handleTouchStart(e) {
     e.preventDefault();
     startDrawing(e);
-});
-canvas.addEventListener('touchmove', (e) => {
+}
+
+function handleTouchMove(e) {
     e.preventDefault();
     draw(e);
-});
-canvas.addEventListener('touchend', stopDrawing);
-
-// Ластик
-eraserBtn.addEventListener('click', () => {
-    isEraser = !isEraser;
-    eraserBtn.style.background = isEraser 
-        ? 'linear-gradient(90deg, #f9ca24, #f0932b)' 
-        : 'linear-gradient(90deg, #667eea, #764ba2)';
-});
-
-// Очистка холста
-clearCanvasBtn.addEventListener('click', () => {
-    ctx.fillStyle = '#1e1e3f';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-});
+}
 
 // Сохранение чертежа
-saveCanvasBtn.addEventListener('click', () => {
+function saveDrawing() {
     const dataURL = canvas.toDataURL('image/png');
     const drawings = getSavedDrawings();
     drawings.push({
@@ -161,18 +173,29 @@ saveCanvasBtn.addEventListener('click', () => {
     localStorage.setItem('engineerDrawings', JSON.stringify(drawings));
     loadSavedDrawings();
     showNotification('✅ Чертеж сохранён!');
-});
+}
 
 // Показать/скрыть чертежи
-toggleDrawingsBtn.addEventListener('click', () => {
-    const savedDrawings = document.getElementById('savedDrawings');
-    if (savedDrawings.style.display === 'none') {
-        savedDrawings.style.display = 'block';
+function toggleDrawings() {
+    savedDrawingsSection.classList.toggle('visible');
+    if (savedDrawingsSection.classList.contains('visible')) {
         loadSavedDrawings();
-    } else {
-        savedDrawings.style.display = 'none';
     }
-});
+}
+
+// Ластик
+function toggleEraser() {
+    isEraser = !isEraser;
+    eraserBtn.style.background = isEraser
+        ? 'linear-gradient(90deg, #f9ca24, #f0932b)'
+        : 'linear-gradient(90deg, #667eea, #764ba2)';
+}
+
+// Очистка холста
+function clearCanvas() {
+    ctx.fillStyle = '#1e1e3f';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
 
 // Получение сохранённых чертежей
 function getSavedDrawings() {
