@@ -36,6 +36,7 @@ const brushSize = document.getElementById('brushSize');
 const eraserBtn = document.getElementById('eraser');
 const clearCanvasBtn = document.getElementById('clearCanvas');
 const saveCanvasBtn = document.getElementById('saveCanvas');
+const toggleDrawingsBtn = document.getElementById('toggleDrawings');
 const drawingsGrid = document.getElementById('drawingsGrid');
 
 let isDrawing = false;
@@ -160,6 +161,17 @@ saveCanvasBtn.addEventListener('click', () => {
     localStorage.setItem('engineerDrawings', JSON.stringify(drawings));
     loadSavedDrawings();
     showNotification('✅ Чертеж сохранён!');
+});
+
+// Показать/скрыть чертежи
+toggleDrawingsBtn.addEventListener('click', () => {
+    const savedDrawings = document.getElementById('savedDrawings');
+    if (savedDrawings.style.display === 'none') {
+        savedDrawings.style.display = 'block';
+        loadSavedDrawings();
+    } else {
+        savedDrawings.style.display = 'none';
+    }
 });
 
 // Получение сохранённых чертежей
