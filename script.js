@@ -35,6 +35,8 @@ const colorPicker = document.getElementById('colorPicker');
 const brushSize = document.getElementById('brushSize');
 const eraserBtn = document.getElementById('eraser');
 const clearCanvasBtn = document.getElementById('clearCanvas');
+const saveCanvasBtn = document.getElementById('saveCanvas');
+const drawingsGrid = document.getElementById('drawingsGrid');
 
 let isDrawing = false;
 let isEraser = false;
@@ -44,7 +46,7 @@ let lastY = 0;
 // Настройка размера canvas
 function resizeCanvas() {
     const maxWidth = Math.min(window.innerWidth * 0.85, 800);
-    const maxHeight = Math.min(window.innerHeight * 0.6, 500);
+    const maxHeight = Math.min(window.innerHeight * 0.5, 400);
     canvas.width = maxWidth;
     canvas.height = maxHeight;
     ctx.fillStyle = '#1e1e3f';
@@ -59,6 +61,7 @@ resizeCanvas();
 engineerCard.addEventListener('click', () => {
     modal.classList.add('active');
     resizeCanvas();
+    loadSavedDrawings();
 });
 
 // Закрытие модального окна
@@ -144,3 +147,114 @@ clearCanvasBtn.addEventListener('click', () => {
     ctx.fillStyle = '#1e1e3f';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 });
+
+// Сохранение чертежа
+saveCanvasBtn.addEventListener('click', () => {
+    const dataURL = canvas.toDataURL('image/png');
+    const drawings = getSavedDrawings();
+    drawings.push({
+        id: Date.now(),
+        data: dataURL,
+        date: new Date().toLocaleString('ru-RU')
+    });
+    localStorage.setItem('engineerDrawings', JSON.stringify(drawings));
+    loadSavedDrawings();
+    showNotification('✅ Чертеж сохранён!');
+});
+
+// Получение сохранённых чертежей
+function getSavedDrawings() {
+    const stored = localStorage.getItem('engineerDrawings');
+    return stored ? JSON.parse(stored) : [];
+}
+
+// Загрузка сохранённых чертежей
+function loadSavedDrawings() {
+    const drawings = getSavedDrawings();
+    drawingsGrid.innerHTML = '';
+    
+    if (drawings.length === 0) {
+        drawingsGrid.innerHTML = '<p style="color: #a29bfe; grid-column: 1/-1; text-align: center;">Нет сохранённых чертежей</p>';
+        return;
+    }
+    
+    drawings.forEach(drawing => {
+        const item = document.createElement('div');
+        item.className = 'drawing-item';
+        item.innerHTML = `
+            <img src="${drawing.data}" alt="Чертеж от ${drawing.date}">
+            <button class="delete-btn" data-id="${drawing.id}">×</button>
+        `;
+        
+        // Загрузка чертежа на холст при клике
+        item.addEventListener('click', (e) => {
+            if (!e.target.classList.contains('delete-btn')) {
+                loadDrawingToCanvas(drawing.data);
+            }
+        });
+        
+        // Удаление чертежа
+        item.querySelector('.delete-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            deleteDrawing(drawing.id);
+        });
+        
+        drawingsGrid.appendChild(item);
+    });
+}
+
+// Загрузка чертежа на холст
+function loadDrawingToCanvas(dataURL) {
+    const img = new Image();
+    img.onload = () => {
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    };
+    img.src = dataURL;
+}
+
+// Удаление чертежа
+function deleteDrawing(id) {
+    let drawings = getSavedDrawings();
+    drawings = drawings.filter(d => d.id !== id);
+    localStorage.setItem('engineerDrawings', JSON.stringify(drawings));
+    loadSavedDrawings();
+    showNotification('🗑️ Чертеж удалён');
+}
+
+// Уведомление
+function showNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        color: white;
+        padding: 15px 25px;
+        border-radius: 10px;
+        z-index: 2000;
+        animation: slideIn 0.3s ease;
+    `;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'fadeOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 2000);
+}
+
+// Добавление анимаций уведомлений
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes fadeOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+`;
+document.head.appendChild(style);

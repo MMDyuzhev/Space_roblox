@@ -410,6 +410,84 @@ footer {
     display: block;
 }
 
+/* Сохранённые чертежи */
+.saved-drawings {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 2px solid rgba(138, 43, 226, 0.3);
+}
+
+.saved-drawings h3 {
+    color: #4ecdc4;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+}
+
+.drawings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.drawing-item {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid rgba(102, 126, 234, 0.3);
+    transition: transform 0.3s, border-color 0.3s;
+    cursor: pointer;
+}
+
+.drawing-item:hover {
+    transform: scale(1.05);
+    border-color: rgba(102, 126, 234, 0.8);
+}
+
+.drawing-item img {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.drawing-item .delete-btn {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: rgba(255, 107, 107, 0.9);
+    border: none;
+    color: white;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.drawing-item:hover .delete-btn {
+    opacity: 1;
+}
+
+.drawings-grid::-webkit-scrollbar {
+    width: 8px;
+}
+
+.drawings-grid::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.drawings-grid::-webkit-scrollbar-thumb {
+    background: rgba(138, 43, 226, 0.5);
+    border-radius: 4px;
+}
+
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }

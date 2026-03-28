@@ -85,8 +85,13 @@
                 <input type="range" id="brushSize" min="1" max="50" value="5" title="Размер кисти">
                 <button class="tool-btn" id="eraser">🧽 Ластик</button>
                 <button class="tool-btn" id="clearCanvas">🗑️ Очистить</button>
+                <button class="tool-btn" id="saveCanvas">💾 Сохранить</button>
             </div>
             <canvas id="drawingCanvas"></canvas>
+            <div class="saved-drawings" id="savedDrawings">
+                <h3>📋 Сохранённые чертежи</h3>
+                <div class="drawings-grid" id="drawingsGrid"></div>
+            </div>
         </div>
     </div>
 
