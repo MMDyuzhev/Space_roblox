@@ -62,6 +62,16 @@
             </div>
 
             <div class="character-card">
+                <div class="character-avatar">🤖</div>
+                <h3 class="character-name">Робо-Помощник</h3>
+                <p class="character-desc">
+                    Искусственный интеллект корабля.
+                    Всегда готов к приключениям!
+                </p>
+                <span class="character-role">Инженер</span>
+            </div>
+
+            <div class="character-card">
                 <div class="character-avatar">👷</div>
                 <h3 class="character-name">Инженер Гайка</h3>
                 <p class="character-desc">
@@ -70,6 +80,22 @@
                 </p>
                 <span class="character-role">Механик</span>
             </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно с фактами о космосе -->
+    <div class="facts-modal" id="factsModal">
+        <div class="facts-content">
+            <div class="facts-header">
+                <h2>🌌 Космические Факты</h2>
+                <button class="close-btn" id="closeFactsModal">&times;</button>
+            </div>
+            <div class="facts-sheet">
+                <div class="fact-icon">🚀</div>
+                <p class="fact-text" id="factText">Загрузка факта...</p>
+                <div class="fact-number" id="factNumber">1 / 20</div>
+            </div>
+            <button class="next-fact-btn" id="nextFactBtn">➡️ Далее</button>
         </div>
     </div>
 
