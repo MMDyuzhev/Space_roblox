@@ -73,6 +73,23 @@
         </div>
     </div>
 
+    <!-- Модальное окно с рисовалкой -->
+    <div class="drawing-modal" id="drawingModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📝 Чертежи Инженера Гайки</h2>
+                <button class="close-btn" id="closeModal">&times;</button>
+            </div>
+            <div class="drawing-tools">
+                <input type="color" id="colorPicker" value="#ffffff" title="Выбрать цвет">
+                <input type="range" id="brushSize" min="1" max="50" value="5" title="Размер кисти">
+                <button class="tool-btn" id="eraser">🧽 Ластик</button>
+                <button class="tool-btn" id="clearCanvas">🗑️ Очистить</button>
+            </div>
+            <canvas id="drawingCanvas"></canvas>
+        </div>
+    </div>
+
     <footer>
         <p>🪐 Добро пожаловать в космическую вселенную Roblox! 🪐</p>
     </footer>
