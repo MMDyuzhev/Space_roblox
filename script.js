@@ -73,14 +73,17 @@ function initFacts() {
     const nextFactBtn = document.getElementById('nextFactBtn');
     const factText = document.getElementById('factText');
     const factNumber = document.getElementById('factNumber');
-    const factIcon = document.querySelector('.fact-icon');
 
-    if (!robotCard) return;
+    if (!robotCard || !factsModal) return;
 
     // Открытие модального окна фактов
     robotCard.addEventListener('click', () => {
         factsModal.classList.add('active');
-        showFact(0);
+        const factIcon = factsModal.querySelector('.fact-icon');
+        if (factIcon) factIcon.textContent = '🚀';
+        if (factText) factText.textContent = spaceFacts[0].text;
+        if (factNumber) factNumber.textContent = `1 / ${spaceFacts.length}`;
+        currentFactIndex = 0;
     });
 
     // Закрытие
@@ -97,18 +100,17 @@ function initFacts() {
     // Следующий факт
     nextFactBtn.addEventListener('click', () => {
         currentFactIndex = (currentFactIndex + 1) % spaceFacts.length;
-        showFact(currentFactIndex);
+        const factIcon = factsModal.querySelector('.fact-icon');
+        if (factIcon) factIcon.textContent = spaceFacts[currentFactIndex].icon;
+        if (factText) {
+            factText.style.opacity = '0';
+            setTimeout(() => {
+                factText.textContent = spaceFacts[currentFactIndex].text;
+                factText.style.opacity = '1';
+            }, 300);
+        }
+        if (factNumber) factNumber.textContent = `${currentFactIndex + 1} / ${spaceFacts.length}`;
     });
-
-    function showFact(index) {
-        factText.style.opacity = '0';
-        setTimeout(() => {
-            factText.textContent = spaceFacts[index].text;
-            factIcon.textContent = spaceFacts[index].icon;
-            factNumber.textContent = `${index + 1} / ${spaceFacts.length}`;
-            factText.style.opacity = '1';
-        }, 300);
-    }
 }
 
 // Инициализация рисовалки
