@@ -25,6 +25,32 @@ function createMeteor() {
 
 setInterval(createMeteor, 2000);
 
+// Факты о космосе
+const spaceFacts = [
+    { icon: '🌌', text: 'Наша галактика Млечный Путь содержит от 100 до 400 миллиардов звёзд!' },
+    { icon: '🚀', text: 'Свет от Солнца достигает Земли за 8 минут и 20 секунд.' },
+    { icon: '⭐', text: 'Нейтронные звёзды настолько плотные, что одна чайная ложка их вещества весит 6 миллиардов тонн.' },
+    { icon: '🌑', text: 'На Луне есть места, где никогда не было солнечного света — там может быть лёд.' },
+    { icon: '🪐', text: 'Сатурн имеет более 80 спутников, включая Титан — единственный спутник с атмосферой.' },
+    { icon: '☄️', text: 'Кометы состоят из льда, пыли и камней. Их хвост всегда направлен от Солнца.' },
+    { icon: '🌟', text: 'Самая большая известная звезда — UY Scuti. Её диаметр в 1700 раз больше Солнца!' },
+    { icon: '🛰️', text: 'На орбите Земли находится более 3000 неработающих спутников — космический мусор.' },
+    { icon: '🌠', text: 'Метеоры сгорают в атмосфере на высоте около 100 км.' },
+    { icon: '🔭', text: 'Телескоп Хаббл сделал более 1.5 миллиона наблюдений за 30 лет работы.' },
+    { icon: '🌍', text: 'Земля — единственная планета, названная не в честь бога. И единственная с жизнью!' },
+    { icon: '🔴', text: 'Марс красный из-за оксида железа — ржавчины — в его почве.' },
+    { icon: '☀️', text: 'Солнце составляет 99.86% всей массы Солнечной системы.' },
+    { icon: '🌙', text: 'Луна удаляется от Земли на 3.8 см каждый год.' },
+    { icon: '💫', text: 'В космосе полная тишина — там нет воздуха для распространения звука.' },
+    { icon: '🛸', text: 'Астрономы нашли тысячи экзопланет. Некоторые из них могут быть обитаемы.' },
+    { icon: '🕳️', text: 'Чёрная дыра в центре нашей галактики в 4 миллиона раз массивнее Солнца.' },
+    { icon: '✨', text: 'Сверхновая звезда может светить ярче целой галактики в течение нескольких недель.' },
+    { icon: '🔮', text: 'Вселенная расширяется с ускорением. За это отвечает тёмная энергия.' },
+    { icon: '👨‍🚀', text: 'Первый человек в космосе — Юрий Гагарин. Он полетел 12 апреля 1961 года.' }
+];
+
+let currentFactIndex = 0;
+
 // Переменные для рисовалки
 let isDrawing = false;
 let isEraser = false;
@@ -35,6 +61,58 @@ let modal, closeModal;
 
 // Инициализация после загрузки DOM
 document.addEventListener('DOMContentLoaded', () => {
+    initFacts();
+    initDrawing();
+});
+
+// Инициализация фактов
+function initFacts() {
+    const robotCard = document.getElementById('robotCard');
+    const factsModal = document.getElementById('factsModal');
+    const closeFactsModal = document.getElementById('closeFactsModal');
+    const nextFactBtn = document.getElementById('nextFactBtn');
+    const factText = document.getElementById('factText');
+    const factNumber = document.getElementById('factNumber');
+    const factIcon = document.querySelector('.fact-icon');
+
+    if (!robotCard) return;
+
+    // Открытие модального окна фактов
+    robotCard.addEventListener('click', () => {
+        factsModal.classList.add('active');
+        showFact(0);
+    });
+
+    // Закрытие
+    closeFactsModal.addEventListener('click', () => {
+        factsModal.classList.remove('active');
+    });
+
+    factsModal.addEventListener('click', (e) => {
+        if (e.target === factsModal) {
+            factsModal.classList.remove('active');
+        }
+    });
+
+    // Следующий факт
+    nextFactBtn.addEventListener('click', () => {
+        currentFactIndex = (currentFactIndex + 1) % spaceFacts.length;
+        showFact(currentFactIndex);
+    });
+
+    function showFact(index) {
+        factText.style.opacity = '0';
+        setTimeout(() => {
+            factText.textContent = spaceFacts[index].text;
+            factIcon.textContent = spaceFacts[index].icon;
+            factNumber.textContent = `${index + 1} / ${spaceFacts.length}`;
+            factText.style.opacity = '1';
+        }, 300);
+    }
+}
+
+// Инициализация рисовалки
+function initDrawing() {
     // Получаем элементы
     modal = document.getElementById('drawingModal');
     closeModal = document.getElementById('closeModal');
@@ -50,14 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
     savedDrawingsSection = document.getElementById('savedDrawings');
 
     // Находим карточку Инженера Гайки
-    const cards = document.querySelectorAll('.character-card');
-    let engineerCard = null;
-    cards.forEach(card => {
-        const name = card.querySelector('.character-name');
-        if (name && name.textContent.includes('Гайка')) {
-            engineerCard = card;
-        }
-    });
+    const engineerCard = document.getElementById('engineerCard');
 
     if (!engineerCard) return;
 
@@ -96,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.addEventListener('touchstart', handleTouchStart);
     canvas.addEventListener('touchmove', handleTouchMove);
     canvas.addEventListener('touchend', stopDrawing);
-});
+}
 
 // Настройка размера canvas
 function resizeCanvas() {
