@@ -70,6 +70,69 @@
                 </p>
                 <span class="character-role">Механик</span>
             </div>
+
+            <div class="character-card" id="pilotCard">
+                <div class="character-avatar">👨‍✈️</div>
+                <h3 class="character-name">Капитан Флэт</h3>
+                <p class="character-desc">
+                    Легендарный пилот галактики.
+                    Может уклониться от любого метеорита!
+                </p>
+                <span class="character-role">Пилот</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно с мини-игрой -->
+    <div class="game-modal" id="gameModal">
+        <div class="game-content">
+            <div class="game-header">
+                <h2>🚀 Космическое Уклонение</h2>
+                <button class="close-btn" id="closeGameModal">&times;</button>
+            </div>
+            <div class="game-ui">
+                <div class="game-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">⏱️ Время</span>
+                        <span class="stat-value" id="gameTime">0.0с</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">☄️ Метеориты</span>
+                        <span class="stat-value" id="meteorCount">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">🔥 Комбо</span>
+                        <span class="stat-value" id="comboCount">x1</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">🏆 Рекорд</span>
+                        <span class="stat-value" id="bestScore">0с</span>
+                    </div>
+                </div>
+                <div class="score-display" id="scoreDisplay">0</div>
+            </div>
+            <canvas id="gameCanvas"></canvas>
+            <div class="game-screen" id="startScreen">
+                <h3>🚀 Космическое Уклонение</h3>
+                <p>Уворачивайся от метеоритов!</p>
+                <p class="game-hint">🖱️ Двигай мышкой или пальцем</p>
+                <button class="start-game-btn" id="startGameBtn">▶️ Начать игру</button>
+            </div>
+            <div class="game-screen game-over" id="gameOverScreen">
+                <h3>💥 Игра Окончена!</h3>
+                <div class="game-over-stats">
+                    <p>Время: <span id="finalTime">0с</span></p>
+                    <p>Метеориты: <span id="finalMeteors">0</span></p>
+                    <p>Комбо: <span id="finalCombo">x1</span></p>
+                    <p>🏆 Рекорд: <span id="finalBest">0с</span></p>
+                </div>
+                <div class="achievements-unlocked" id="achievementsUnlocked"></div>
+                <button class="start-game-btn" id="restartGameBtn">🔄 Играть снова</button>
+            </div>
+            <div class="achievements-panel" id="achievementsPanel">
+                <h4>🏅 Достижения</h4>
+                <div class="achievements-list" id="achievementsList"></div>
+            </div>
         </div>
     </div>
 
