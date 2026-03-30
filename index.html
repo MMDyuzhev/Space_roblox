@@ -41,7 +41,7 @@
                 <span class="character-role">Капитан</span>
             </div>
 
-            <div class="character-card">
+            <div class="character-card" id="starCard">
                 <div class="character-avatar">👩‍🚀</div>
                 <h3 class="character-name">Лейтенант Звезда</h3>
                 <p class="character-desc">
@@ -132,6 +132,127 @@
             <div class="achievements-panel" id="achievementsPanel">
                 <h4>🏅 Достижения</h4>
                 <div class="achievements-list" id="achievementsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно с информацией о всех карточках -->
+    <div class="all-cards-modal" id="allCardsModal">
+        <div class="all-cards-content">
+            <div class="all-cards-header">
+                <h2>🌟 Все Персонажи Космоса 🌟</h2>
+                <button class="close-btn" id="closeAllCardsModal">&times;</button>
+            </div>
+            <div class="cards-info-grid">
+                <div class="card-info-item">
+                    <div class="card-info-avatar">👨‍🚀</div>
+                    <h3>Командир Блок</h3>
+                    <span class="card-info-role">Капитан</span>
+                    <p class="card-info-desc">Легендарный исследователь космоса. Первый роблоксиец на Марсе!</p>
+                    <div class="card-info-stats">
+                        <div class="stat-box">
+                            <span class="stat-label">Опыт</span>
+                            <span class="stat-value">⭐⭐⭐⭐⭐</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Миссии</span>
+                            <span class="stat-value">156</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Ранг</span>
+                            <span class="stat-value">Командор</span>
+                        </div>
+                    </div>
+                    <p class="card-info-ability"><strong>🎯 Способность:</strong> Открывает космические факты</p>
+                </div>
+
+                <div class="card-info-item featured">
+                    <div class="card-info-avatar">👩‍🚀</div>
+                    <h3>Лейтенант Звезда</h3>
+                    <span class="card-info-role">Штурман</span>
+                    <p class="card-info-desc">Мастер навигации по галактикам. Знает все звёздные системы!</p>
+                    <div class="card-info-stats">
+                        <div class="stat-box">
+                            <span class="stat-label">Опыт</span>
+                            <span class="stat-value">⭐⭐⭐⭐</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Миссии</span>
+                            <span class="stat-value">124</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Ранг</span>
+                            <span class="stat-value">Лейтенант</span>
+                        </div>
+                    </div>
+                    <p class="card-info-ability"><strong>🎯 Способность:</strong> Показывает информацию обо всех персонажах</p>
+                </div>
+
+                <div class="card-info-item">
+                    <div class="card-info-avatar">🤖</div>
+                    <h3>Робо-Помощник</h3>
+                    <span class="card-info-role">Инженер</span>
+                    <p class="card-info-desc">Искусственный интеллект корабля. Всегда готов к приключениям!</p>
+                    <div class="card-info-stats">
+                        <div class="stat-box">
+                            <span class="stat-label">Опыт</span>
+                            <span class="stat-value">⭐⭐⭐⭐</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Миссии</span>
+                            <span class="stat-value">200+</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Ранг</span>
+                            <span class="stat-value">ИИ 3.0</span>
+                        </div>
+                    </div>
+                    <p class="card-info-ability"><strong>🎯 Способность:</strong> Открывает космические факты</p>
+                </div>
+
+                <div class="card-info-item">
+                    <div class="card-info-avatar">👷</div>
+                    <h3>Инженер Гайка</h3>
+                    <span class="card-info-role">Механик</span>
+                    <p class="card-info-desc">Главный механик флота. Чинит всё от шурупов до гипердвигателя!</p>
+                    <div class="card-info-stats">
+                        <div class="stat-box">
+                            <span class="stat-label">Опыт</span>
+                            <span class="stat-value">⭐⭐⭐⭐⭐</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Миссии</span>
+                            <span class="stat-value">189</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Ранг</span>
+                            <span class="stat-value">Главный Инженер</span>
+                        </div>
+                    </div>
+                    <p class="card-info-ability"><strong>🎯 Способность:</strong> Открывает чертёжную доску</p>
+                </div>
+
+                <div class="card-info-item">
+                    <div class="card-info-avatar">👨‍✈️</div>
+                    <h3>Капитан Флэт</h3>
+                    <span class="card-info-role">Пилот</span>
+                    <p class="card-info-desc">Легендарный пилот галактики. Может уклониться от любого метеорита!</p>
+                    <div class="card-info-stats">
+                        <div class="stat-box">
+                            <span class="stat-label">Опыт</span>
+                            <span class="stat-value">⭐⭐⭐⭐⭐</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Миссии</span>
+                            <span class="stat-value">210</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Ранг</span>
+                            <span class="stat-value">Ас Пилотажа</span>
+                        </div>
+                    </div>
+                    <p class="card-info-ability"><strong>🎯 Способность:</strong> Открывает мини-игру "Космическое Уклонение"</p>
+                </div>
             </div>
         </div>
     </div>

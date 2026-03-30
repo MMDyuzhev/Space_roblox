@@ -365,6 +365,35 @@ style.textContent = `
 document.head.appendChild(style);
 
 // ============================================
+// МОДАЛЬНОЕ ОКНО: ВСЕ ПЕРСОНАЖИ
+// ============================================
+
+function initAllCardsModal() {
+    const starCard = document.getElementById('starCard');
+    const allCardsModal = document.getElementById('allCardsModal');
+    const closeAllCardsModal = document.getElementById('closeAllCardsModal');
+
+    if (starCard && allCardsModal) {
+        // Открытие окна при клике на Лейтенанта Звезду
+        starCard.addEventListener('click', () => {
+            allCardsModal.classList.add('active');
+        });
+
+        // Закрытие по кнопке
+        closeAllCardsModal.addEventListener('click', () => {
+            allCardsModal.classList.remove('active');
+        });
+
+        // Закрытие по клику вне окна
+        allCardsModal.addEventListener('click', (e) => {
+            if (e.target === allCardsModal) {
+                allCardsModal.classList.remove('active');
+            }
+        });
+    }
+}
+
+// ============================================
 // МИНИ-ИГРА: КОСМИЧЕСКОЕ УКЛОНЕНИЕ
 // ============================================
 
@@ -410,6 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initFacts();
     initDrawing();
     initGame();
+    initAllCardsModal();
 });
 
 function initGame() {
