@@ -305,6 +305,41 @@
         </div>
     </div>
 
+    <!-- Модальное окно с викториной по таблице умножения -->
+    <div class="quiz-modal" id="quizModal">
+        <div class="quiz-content">
+            <div class="quiz-header">
+                <h2>🎓 Математическая Викторина Командира Блока</h2>
+                <button class="close-btn" id="closeQuizModal">&times;</button>
+            </div>
+            <div class="quiz-info">
+                <p>Проверь свои знания таблицы умножения!</p>
+            </div>
+            <div class="quiz-stats">
+                <div class="quiz-stat-item">
+                    <span class="quiz-stat-label">✅ Правильно</span>
+                    <span class="quiz-stat-value" id="correctCount">0</span>
+                </div>
+                <div class="quiz-stat-item">
+                    <span class="quiz-stat-label">❌ Неправильно</span>
+                    <span class="quiz-stat-value" id="wrongCount">0</span>
+                </div>
+                <div class="quiz-stat-item">
+                    <span class="quiz-stat-label">📊 Счёт</span>
+                    <span class="quiz-stat-value" id="quizScore">0</span>
+                </div>
+            </div>
+            <div class="quiz-question" id="quizQuestion">
+                <div class="question-text" id="questionText">2 × 2 = ?</div>
+            </div>
+            <div class="quiz-answers" id="quizAnswers">
+                <!-- Варианты ответов будут добавлены через JS -->
+            </div>
+            <div class="quiz-feedback" id="quizFeedback"></div>
+            <button class="next-question-btn" id="nextQuestionBtn">➡️ Следующий вопрос</button>
+        </div>
+    </div>
+
     <footer>
         <p>🪐 Добро пожаловать в космическую вселенную Roblox! 🪐</p>
     </footer>

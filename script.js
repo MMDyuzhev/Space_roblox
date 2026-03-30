@@ -807,3 +807,149 @@ function updateAchievementsUI() {
         .map(a => `<span class="achievement-item">${a.name}</span>`)
         .join('');
 }
+
+// ========================================
+// ВИКТОРИНА ПО ТАБЛИЦЕ УМНОЖЕНИЯ
+// ========================================
+
+let correctAnswers = 0;
+let wrongAnswers = 0;
+let currentQuestion = {};
+let canAnswer = true;
+
+function initQuiz() {
+    const commanderCard = document.querySelector('.character-card:first-child');
+    const quizModal = document.getElementById('quizModal');
+    const closeQuizModal = document.getElementById('closeQuizModal');
+    const nextQuestionBtn = document.getElementById('nextQuestionBtn');
+    const quizAnswers = document.getElementById('quizAnswers');
+    const quizFeedback = document.getElementById('quizFeedback');
+
+    if (!commanderCard || !quizModal) return;
+
+    // Открытие викторины при клике на карточку Командир Блок
+    commanderCard.addEventListener('click', () => {
+        quizModal.classList.add('active');
+        generateQuestion();
+        updateQuizStats();
+    });
+
+    closeQuizModal.addEventListener('click', () => {
+        quizModal.classList.remove('active');
+    });
+
+    quizModal.addEventListener('click', (e) => {
+        if (e.target === quizModal) {
+            quizModal.classList.remove('active');
+        }
+    });
+
+    nextQuestionBtn.addEventListener('click', () => {
+        generateQuestion();
+        quizFeedback.textContent = '';
+        quizFeedback.className = 'quiz-feedback';
+        nextQuestionBtn.style.display = 'none';
+    });
+
+    // Генерация первого вопроса при открытии
+    generateQuestion();
+}
+
+function generateQuestion() {
+    const num1 = Math.floor(Math.random() * 9) + 2; // 2-10
+    const num2 = Math.floor(Math.random() * 9) + 2; // 2-10
+    const correctAnswer = num1 * num2;
+
+    currentQuestion = {
+        num1,
+        num2,
+        correctAnswer
+    };
+
+    // Обновление текста вопроса
+    const questionText = document.getElementById('questionText');
+    if (questionText) {
+        questionText.textContent = `${num1} × ${num2} = ?`;
+    }
+
+    // Генерация вариантов ответов
+    generateAnswerOptions(correctAnswer);
+    canAnswer = true;
+}
+
+function generateAnswerOptions(correctAnswer) {
+    const quizAnswers = document.getElementById('quizAnswers');
+    if (!quizAnswers) return;
+
+    quizAnswers.innerHTML = '';
+
+    // Создаем массив с правильным ответом и 3 неправильными
+    const options = new Set([correctAnswer]);
+
+    while (options.size < 4) {
+        // Генерируем неправильные ответы, близкие к правильному
+        const offset = Math.floor(Math.random() * 10) - 5; // -5 до +5
+        const wrongAnswer = correctAnswer + offset;
+        if (wrongAnswer > 0 && wrongAnswer !== correctAnswer) {
+            options.add(wrongAnswer);
+        }
+    }
+
+    // Преобразуем Set в массив и перемешиваем
+    const optionsArray = Array.from(options).sort(() => Math.random() - 0.5);
+
+    // Создаем кнопки ответов
+    optionsArray.forEach(answer => {
+        const btn = document.createElement('button');
+        btn.className = 'answer-btn';
+        btn.textContent = answer;
+        btn.addEventListener('click', () => checkAnswer(answer, btn));
+        quizAnswers.appendChild(btn);
+    });
+}
+
+function checkAnswer(selectedAnswer, btn) {
+    if (!canAnswer) return;
+    canAnswer = false;
+
+    const quizFeedback = document.getElementById('quizFeedback');
+    const nextQuestionBtn = document.getElementById('nextQuestionBtn');
+    const answerBtns = document.querySelectorAll('.answer-btn');
+
+    if (selectedAnswer === currentQuestion.correctAnswer) {
+        // Правильный ответ
+        btn.classList.add('correct');
+        correctAnswers++;
+        quizFeedback.textContent = '✅ Правильно! Молодец!';
+        quizFeedback.className = 'quiz-feedback correct';
+    } else {
+        // Неправильный ответ
+        btn.classList.add('wrong');
+        wrongAnswers++;
+        quizFeedback.textContent = `❌ Неправильно! Правильный ответ: ${currentQuestion.correctAnswer}`;
+        quizFeedback.className = 'quiz-feedback wrong';
+
+        // Показываем правильный ответ
+        answerBtns.forEach(button => {
+            if (parseInt(button.textContent) === currentQuestion.correctAnswer) {
+                button.classList.add('correct');
+            }
+        });
+    }
+
+    updateQuizStats();
+    nextQuestionBtn.style.display = 'block';
+}
+
+function updateQuizStats() {
+    const correctCount = document.getElementById('correctCount');
+    const wrongCount = document.getElementById('wrongCount');
+    const quizScore = document.getElementById('quizScore');
+
+    if (correctCount) correctCount.textContent = correctAnswers;
+    if (wrongCount) wrongCount.textContent = wrongAnswers;
+    if (quizScore) quizScore.textContent = correctAnswers - wrongAnswers;
+}
+
+// Инициализация викторины
+document.addEventListener('DOMContentLoaded', initQuiz);
