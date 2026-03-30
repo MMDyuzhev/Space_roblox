@@ -39,6 +39,7 @@ let startScreen, gameOverScreen;
 let gameTimeEl, meteorCountEl, comboCountEl, bestScoreEl, scoreDisplayEl;
 let finalTimeEl, finalMeteorsEl, finalComboEl, finalBestEl;
 let achievementsPanel, achievementsList, achievementsUnlocked;
+let gameMusic;
 
 let gameRunning = false;
 let gameLoopId = null;
@@ -427,6 +428,7 @@ function initGame() {
     achievementsPanel = document.getElementById('achievementsPanel');
     achievementsList = document.getElementById('achievementsList');
     achievementsUnlocked = document.getElementById('achievementsUnlocked');
+    gameMusic = document.getElementById('gameMusic');
 
     const pilotCard = document.getElementById('pilotCard');
 
@@ -446,12 +448,22 @@ function initGame() {
     closeGameModal.addEventListener('click', () => {
         if (gameRunning) stopGame();
         gameModal.classList.remove('active');
+        // Останавливаем музыку при закрытии
+        if (gameMusic) {
+            gameMusic.pause();
+            gameMusic.currentTime = 0;
+        }
     });
 
     gameModal.addEventListener('click', (e) => {
         if (e.target === gameModal) {
             if (gameRunning) stopGame();
             gameModal.classList.remove('active');
+            // Останавливаем музыку при закрытии
+            if (gameMusic) {
+                gameMusic.pause();
+                gameMusic.currentTime = 0;
+            }
         }
     });
 
@@ -525,6 +537,12 @@ function startGame() {
     rocket.x = gameCanvas.width / 2;
     rocket.y = gameCanvas.height - 80;
 
+    // Запускаем музыку
+    if (gameMusic) {
+        gameMusic.volume = 0.5;
+        gameMusic.play().catch(e => console.log('Автовоспроизведение заблокировано:', e));
+    }
+
     updateUI();
     gameLoop();
 }
@@ -542,6 +560,11 @@ function stopGame() {
     if (comboTimer) {
         clearTimeout(comboTimer);
         comboTimer = null;
+    }
+    // Останавливаем музыку
+    if (gameMusic) {
+        gameMusic.pause();
+        gameMusic.currentTime = 0;
     }
 }
 
