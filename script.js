@@ -1,30 +1,3 @@
-// Создание звёзд
-const starsContainer = document.getElementById('stars');
-for (let i = 0; i < 200; i++) {
-    const star = document.createElement('div');
-    star.className = 'star';
-    star.style.left = Math.random() * 100 + '%';
-    star.style.top = Math.random() * 100 + '%';
-    star.style.width = (Math.random() * 3 + 1) + 'px';
-    star.style.height = star.style.width;
-    star.style.animationDelay = Math.random() * 2 + 's';
-    starsContainer.appendChild(star);
-}
-
-// Создание метеоритов
-function createMeteor() {
-    const meteor = document.createElement('div');
-    meteor.className = 'meteor';
-    meteor.style.left = Math.random() * 100 + '%';
-    meteor.style.top = Math.random() * 50 + '%';
-    meteor.style.animationDelay = Math.random() * 2 + 's';
-    document.body.appendChild(meteor);
-
-    setTimeout(() => meteor.remove(), 3000);
-}
-
-setInterval(createMeteor, 2000);
-
 // Факты о космосе
 const spaceFacts = [
     { icon: '🌌', text: 'Наша галактика Млечный Путь содержит от 100 до 400 миллиардов звёзд!' },
@@ -59,8 +32,86 @@ let lastY = 0;
 let canvas, ctx, colorPicker, brushSize, eraserBtn, clearCanvasBtn, saveCanvasBtn, toggleDrawingsBtn, drawingsGrid, savedDrawingsSection;
 let modal, closeModal;
 
+// Переменные игры
+let gameCanvas, gameCtx;
+let gameModal, closeGameModal, startGameBtn, restartGameBtn;
+let startScreen, gameOverScreen;
+let gameTimeEl, meteorCountEl, comboCountEl, bestScoreEl, scoreDisplayEl;
+let finalTimeEl, finalMeteorsEl, finalComboEl, finalBestEl;
+let achievementsPanel, achievementsList, achievementsUnlocked;
+
+let gameRunning = false;
+let gameLoopId = null;
+let startTime = 0;
+let elapsedTime = 0;
+let meteorsDodged = 0;
+let combo = 1;
+let comboTimer = null;
+
+let rocket = { x: 0, y: 0, size: 40 };
+let meteors = [];
+let particles = [];
+let lastMeteorTime = 0;
+let meteorSpawnRate = 1000;
+let difficultyMultiplier = 1;
+
+let bestScore = 0;
+let unlockedAchievements = [];
+
+// Достижения
+const achievements = [
+    { id: 'first_10s', name: '🥉 Новичок', desc: 'Выжить 10 секунд', condition: (s) => s >= 10, unlocked: false },
+    { id: 'first_30s', name: '🥈 Опытный', desc: 'Выжить 30 секунд', condition: (s) => s >= 30, unlocked: false },
+    { id: 'first_60s', name: '🥇 Мастер', desc: 'Выжить 60 секунд', condition: (s) => s >= 60, unlocked: false },
+    { id: 'dodge_25', name: '⭐ Ловкач', desc: 'Уклониться от 25 метеоритов', condition: (_, m) => m >= 25, unlocked: false },
+    { id: 'dodge_50', name: '💫 Виртуоз', desc: 'Уклониться от 50 метеоритов', condition: (_, m) => m >= 50, unlocked: false },
+    { id: 'combo_10', name: '🔥 Комбо-мастер', desc: 'Набрать комбо x10', condition: (s, m, c) => c >= 10, unlocked: false },
+    { id: 'score_100', name: '🏆 Чемпион', desc: 'Набрать 100 очков', condition: (s) => s >= 100, unlocked: false }
+];
+
 // Инициализация после загрузки DOM
 document.addEventListener('DOMContentLoaded', () => {
+    // Создание звёзд
+    const starsContainer = document.getElementById('stars');
+    for (let i = 0; i < 200; i++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        star.style.left = Math.random() * 100 + '%';
+        star.style.top = Math.random() * 100 + '%';
+        star.style.width = (Math.random() * 3 + 1) + 'px';
+        star.style.height = star.style.width;
+        star.style.animationDelay = Math.random() * 2 + 's';
+        starsContainer.appendChild(star);
+    }
+
+    // Создание метеоритов
+    function createMeteor() {
+        const meteor = document.createElement('div');
+        meteor.className = 'meteor';
+        meteor.style.left = Math.random() * 100 + '%';
+        meteor.style.top = Math.random() * 50 + '%';
+        meteor.style.animationDelay = Math.random() * 2 + 's';
+        document.body.appendChild(meteor);
+
+        setTimeout(() => meteor.remove(), 3000);
+    }
+
+    setInterval(createMeteor, 2000);
+
+    // Добавление анимаций уведомлений
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+
     initFacts();
     initDrawing();
     initGame();
@@ -78,7 +129,6 @@ function initFacts() {
 
     if (!robotCard || !factsModal) return;
 
-    // Открытие модального окна фактов
     robotCard.addEventListener('click', () => {
         factsModal.classList.add('active');
         const factIcon = factsModal.querySelector('.fact-icon');
@@ -88,7 +138,6 @@ function initFacts() {
         currentFactIndex = 0;
     });
 
-    // Закрытие
     closeFactsModal.addEventListener('click', () => {
         factsModal.classList.remove('active');
     });
@@ -99,7 +148,6 @@ function initFacts() {
         }
     });
 
-    // Следующий факт
     nextFactBtn.addEventListener('click', () => {
         currentFactIndex = (currentFactIndex + 1) % spaceFacts.length;
         const factIcon = factsModal.querySelector('.fact-icon');
@@ -117,7 +165,6 @@ function initFacts() {
 
 // Инициализация рисовалки
 function initDrawing() {
-    // Получаем элементы
     modal = document.getElementById('drawingModal');
     closeModal = document.getElementById('closeModal');
     canvas = document.getElementById('drawingCanvas');
@@ -131,22 +178,18 @@ function initDrawing() {
     drawingsGrid = document.getElementById('drawingsGrid');
     savedDrawingsSection = document.getElementById('savedDrawings');
 
-    // Находим карточку Инженера Гайки
     const engineerCard = document.getElementById('engineerCard');
 
     if (!engineerCard) return;
 
-    // Настройка canvas
     resizeCanvas();
 
-    // Открытие модального окна при клике на карточку
     engineerCard.addEventListener('click', () => {
         modal.classList.add('active');
         resizeCanvas();
         loadSavedDrawings();
     });
 
-    // Закрытие модального окна
     closeModal.addEventListener('click', () => {
         modal.classList.remove('active');
     });
@@ -157,13 +200,11 @@ function initDrawing() {
         }
     });
 
-    // Настройка кнопок
     saveCanvasBtn.addEventListener('click', saveDrawing);
     toggleDrawingsBtn.addEventListener('click', toggleDrawings);
     eraserBtn.addEventListener('click', toggleEraser);
     clearCanvasBtn.addEventListener('click', clearCanvas);
 
-    // События рисования
     canvas.addEventListener('mousedown', startDrawing);
     canvas.addEventListener('mousemove', draw);
     canvas.addEventListener('mouseup', stopDrawing);
@@ -173,7 +214,6 @@ function initDrawing() {
     canvas.addEventListener('touchend', stopDrawing);
 }
 
-// Настройка размера canvas
 function resizeCanvas() {
     const maxWidth = Math.min(window.innerWidth * 0.85, 800);
     const maxHeight = Math.min(window.innerHeight * 0.5, 400);
@@ -185,7 +225,6 @@ function resizeCanvas() {
     ctx.lineJoin = 'round';
 }
 
-// Рисование
 function startDrawing(e) {
     isDrawing = true;
     [lastX, lastY] = getCoordinates(e);
@@ -236,7 +275,6 @@ function handleTouchMove(e) {
     draw(e);
 }
 
-// Сохранение чертежа
 function saveDrawing() {
     const dataURL = canvas.toDataURL('image/png');
     const drawings = getSavedDrawings();
@@ -250,7 +288,6 @@ function saveDrawing() {
     showNotification('✅ Чертеж сохранён!');
 }
 
-// Показать/скрыть чертежи
 function toggleDrawings() {
     savedDrawingsSection.classList.toggle('visible');
     if (savedDrawingsSection.classList.contains('visible')) {
@@ -258,7 +295,6 @@ function toggleDrawings() {
     }
 }
 
-// Ластик
 function toggleEraser() {
     isEraser = !isEraser;
     eraserBtn.style.background = isEraser
@@ -266,19 +302,16 @@ function toggleEraser() {
         : 'linear-gradient(90deg, #667eea, #764ba2)';
 }
 
-// Очистка холста
 function clearCanvas() {
     ctx.fillStyle = '#1e1e3f';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
-// Получение сохранённых чертежей
 function getSavedDrawings() {
     const stored = localStorage.getItem('engineerDrawings');
     return stored ? JSON.parse(stored) : [];
 }
 
-// Загрузка сохранённых чертежей
 function loadSavedDrawings() {
     const drawings = getSavedDrawings();
     drawingsGrid.innerHTML = '';
@@ -311,7 +344,6 @@ function loadSavedDrawings() {
     });
 }
 
-// Загрузка чертежа на холст
 function loadDrawingToCanvas(dataURL) {
     const img = new Image();
     img.onload = () => {
@@ -320,7 +352,6 @@ function loadDrawingToCanvas(dataURL) {
     img.src = dataURL;
 }
 
-// Удаление чертежа
 function deleteDrawing(id) {
     let drawings = getSavedDrawings();
     drawings = drawings.filter(d => d.id !== id);
@@ -329,7 +360,6 @@ function deleteDrawing(id) {
     showNotification('🗑️ Чертеж удалён');
 }
 
-// Уведомление
 function showNotification(message) {
     const notification = document.createElement('div');
     notification.textContent = message;
@@ -352,41 +382,21 @@ function showNotification(message) {
     }, 2000);
 }
 
-// Добавление анимаций уведомлений
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-    @keyframes fadeOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
-    }
-`;
-document.head.appendChild(style);
-
-// ============================================
 // МОДАЛЬНОЕ ОКНО: ВСЕ ПЕРСОНАЖИ
-// ============================================
-
 function initAllCardsModal() {
     const starCard = document.getElementById('starCard');
     const allCardsModal = document.getElementById('allCardsModal');
     const closeAllCardsModal = document.getElementById('closeAllCardsModal');
 
     if (starCard && allCardsModal) {
-        // Открытие окна при клике на Лейтенанта Звезду
         starCard.addEventListener('click', () => {
             allCardsModal.classList.add('active');
         });
 
-        // Закрытие по кнопке
         closeAllCardsModal.addEventListener('click', () => {
             allCardsModal.classList.remove('active');
         });
 
-        // Закрытие по клику вне окна
         allCardsModal.addEventListener('click', (e) => {
             if (e.target === allCardsModal) {
                 allCardsModal.classList.remove('active');
@@ -395,49 +405,8 @@ function initAllCardsModal() {
     }
 }
 
-// ============================================
-// МИНИ-ИГРА: КОСМИЧЕСКОЕ УКЛОНЕНИЕ
-// ============================================
-
-// Переменные игры
-let gameCanvas, gameCtx;
-let gameModal, closeGameModal, startGameBtn, restartGameBtn;
-let startScreen, gameOverScreen;
-let gameTimeEl, meteorCountEl, comboCountEl, bestScoreEl, scoreDisplayEl;
-let finalTimeEl, finalMeteorsEl, finalComboEl, finalBestEl;
-let achievementsPanel, achievementsList, achievementsUnlocked;
-
-let gameRunning = false;
-let gameLoopId = null;
-let startTime = 0;
-let elapsedTime = 0;
-let meteorsDodged = 0;
-let combo = 1;
-let comboTimer = null;
-
-let rocket = { x: 0, y: 0, size: 40 };
-let meteors = [];
-let particles = [];
-let lastMeteorTime = 0;
-let meteorSpawnRate = 1000;
-let difficultyMultiplier = 1;
-
-let bestScore = 0;
-let unlockedAchievements = [];
-
-// Достижения
-const achievements = [
-    { id: 'first_10s', name: '🥉 Новичок', desc: 'Выжить 10 секунд', condition: (s) => s >= 10, unlocked: false },
-    { id: 'first_30s', name: '🥈 Опытный', desc: 'Выжить 30 секунд', condition: (s) => s >= 30, unlocked: false },
-    { id: 'first_60s', name: '🥇 Мастер', desc: 'Выжить 60 секунд', condition: (s) => s >= 60, unlocked: false },
-    { id: 'dodge_25', name: '⭐ Ловкач', desc: 'Уклониться от 25 метеоритов', condition: (_, m) => m >= 25, unlocked: false },
-    { id: 'dodge_50', name: '💫 Виртуоз', desc: 'Уклониться от 50 метеоритов', condition: (_, m) => m >= 50, unlocked: false },
-    { id: 'combo_10', name: '🔥 Комбо-мастер', desc: 'Набрать комбо x10', condition: (s, m, c) => c >= 10, unlocked: false },
-    { id: 'score_100', name: '🏆 Чемпион', desc: 'Набрать 100 очков', condition: (s) => s >= 100, unlocked: false }
-];
-
+// Инициализация игры
 function initGame() {
-    // Получаем элементы
     gameModal = document.getElementById('gameModal');
     closeGameModal = document.getElementById('closeGameModal');
     gameCanvas = document.getElementById('gameCanvas');
@@ -459,26 +428,21 @@ function initGame() {
     achievementsList = document.getElementById('achievementsList');
     achievementsUnlocked = document.getElementById('achievementsUnlocked');
 
-    // Находим карточку пилота
     const pilotCard = document.getElementById('pilotCard');
 
     if (!pilotCard) return;
 
-    // Загрузка рекорда
     bestScore = parseFloat(localStorage.getItem('gameBestScore')) || 0;
     bestScoreEl.textContent = bestScore.toFixed(1) + 'с';
 
-    // Настройка canvas
     resizeGameCanvas();
 
-    // Открытие модального окна
     pilotCard.addEventListener('click', () => {
         gameModal.classList.add('active');
         resizeGameCanvas();
         loadAchievements();
     });
 
-    // Закрытие
     closeGameModal.addEventListener('click', () => {
         if (gameRunning) stopGame();
         gameModal.classList.remove('active');
@@ -491,14 +455,12 @@ function initGame() {
         }
     });
 
-    // Старт игры
     startGameBtn.addEventListener('click', startGame);
     restartGameBtn.addEventListener('click', restartGame);
 
-    // Управление мышью
     gameCanvas.addEventListener('mousemove', handleMouseMove);
-    gameCanvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-    gameCanvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    gameCanvas.addEventListener('touchmove', handleTouchMoveGame, { passive: false });
+    gameCanvas.addEventListener('touchstart', handleTouchStartGame, { passive: false });
 }
 
 function resizeGameCanvas() {
@@ -506,13 +468,12 @@ function resizeGameCanvas() {
     const maxHeight = Math.min(window.innerHeight * 0.6, 500);
     gameCanvas.width = maxWidth;
     gameCanvas.height = maxHeight;
-    
-    // Центрируем ракету при изменении размера
+
     if (!gameRunning) {
         rocket.x = gameCanvas.width / 2;
         rocket.y = gameCanvas.height - 80;
     }
-    
+
     drawGame();
 }
 
@@ -521,26 +482,24 @@ function handleMouseMove(e) {
     const rect = gameCanvas.getBoundingClientRect();
     rocket.x = e.clientX - rect.left;
     rocket.y = e.clientY - rect.top;
-    
-    // Ограничение границ
+
     rocket.x = Math.max(rocket.size / 2, Math.min(gameCanvas.width - rocket.size / 2, rocket.x));
     rocket.y = Math.max(rocket.size / 2, Math.min(gameCanvas.height - rocket.size / 2, rocket.y));
 }
 
-function handleTouchStart(e) {
+function handleTouchStartGame(e) {
     e.preventDefault();
     if (!gameRunning) return;
-    handleTouchMove(e);
+    handleTouchMoveGame(e);
 }
 
-function handleTouchMove(e) {
+function handleTouchMoveGame(e) {
     e.preventDefault();
     if (!gameRunning) return;
     const rect = gameCanvas.getBoundingClientRect();
     rocket.x = e.touches[0].clientX - rect.left;
     rocket.y = e.touches[0].clientY - rect.top;
-    
-    // Ограничение границ
+
     rocket.x = Math.max(rocket.size / 2, Math.min(gameCanvas.width - rocket.size / 2, rocket.x));
     rocket.y = Math.max(rocket.size / 2, Math.min(gameCanvas.height - rocket.size / 2, rocket.y));
 }
@@ -556,19 +515,16 @@ function startGame() {
     meteorSpawnRate = 1000;
     difficultyMultiplier = 1;
     lastMeteorTime = performance.now();
-    
-    // Сброс достижений для текущей сессии
+
     achievements.forEach(a => a.unlocked = false);
-    
-    // Скрываем экраны
+
     startScreen.style.display = 'none';
     gameOverScreen.classList.remove('active');
     achievementsPanel.style.display = 'block';
-    
-    // Начальная позиция ракеты
+
     rocket.x = gameCanvas.width / 2;
     rocket.y = gameCanvas.height - 80;
-    
+
     updateUI();
     gameLoop();
 }
@@ -591,36 +547,24 @@ function stopGame() {
 
 function gameLoop() {
     if (!gameRunning) return;
-    
+
     const currentTime = performance.now();
     const deltaTime = currentTime - lastMeteorTime;
 
-    // Обновление времени
     elapsedTime = (Date.now() - startTime) / 1000;
 
-    // Спавн метеоритов
     if (deltaTime >= meteorSpawnRate) {
         spawnMeteor();
         lastMeteorTime = currentTime;
 
-        // Увеличение сложности
         difficultyMultiplier += 0.02;
         meteorSpawnRate = Math.max(300, 1000 / difficultyMultiplier);
     }
 
-    // Обновление метеоритов
     updateMeteors();
-
-    // Проверка столкновений
     checkCollisions();
-
-    // Отрисовка
     drawGame();
-
-    // Обновление UI
     updateUI();
-
-    // Проверка достижений
     checkAchievements();
 
     gameLoopId = requestAnimationFrame(gameLoop);
@@ -632,7 +576,7 @@ function spawnMeteor() {
         { size: 45, speed: 4, points: 20 },
         { size: 60, speed: 5, points: 30 }
     ];
-    
+
     const type = sizes[Math.floor(Math.random() * sizes.length)];
     const meteor = {
         x: Math.random() * (gameCanvas.width - type.size) + type.size / 2,
@@ -640,9 +584,9 @@ function spawnMeteor() {
         size: type.size,
         speed: type.speed * difficultyMultiplier,
         points: type.points,
-        angle: Math.random() * 30 - 15 // Небольшой угол
+        angle: Math.random() * 30 - 15
     };
-    
+
     meteors.push(meteor);
 }
 
@@ -650,14 +594,12 @@ function updateMeteors() {
     for (let i = meteors.length - 1; i >= 0; i--) {
         const meteor = meteors[i];
         meteor.y += meteor.speed;
-        meteor.x += Math.sin(meteor.y * 0.02) * 2; // Небольшое колебание
-        
-        // Если метеор ушёл за экран
+        meteor.x += Math.sin(meteor.y * 0.02) * 2;
+
         if (meteor.y > gameCanvas.height + meteor.size) {
             meteors.splice(i, 1);
             meteorsDodged++;
-            
-            // Комбо
+
             combo = Math.min(combo + 1, 20);
             resetComboTimer();
         }
@@ -676,8 +618,7 @@ function checkCollisions() {
         const dx = rocket.x - meteor.x;
         const dy = rocket.y - meteor.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        // Столкновение
+
         if (distance < (rocket.size / 2 + meteor.size / 2) * 0.8) {
             gameOver();
             return;
@@ -687,52 +628,38 @@ function checkCollisions() {
 
 function gameOver() {
     gameRunning = false;
-    
-    // Эффект взрыва
+
     createExplosion(rocket.x, rocket.y);
     drawGame();
-    
-    // Сохранение рекорда
+
     if (elapsedTime > bestScore) {
         bestScore = elapsedTime;
         localStorage.setItem('gameBestScore', bestScore.toString());
     }
-    
-    // Показ экрана Game Over
+
     finalTimeEl.textContent = elapsedTime.toFixed(1) + 'с';
     finalMeteorsEl.textContent = meteorsDodged;
     finalComboEl.textContent = 'x' + combo;
     finalBestEl.textContent = bestScore.toFixed(1) + 'с';
-    
-    // Показ разблокированных достижений
+
     const newlyUnlocked = achievements.filter(a => a.unlocked);
     achievementsUnlocked.innerHTML = newlyUnlocked
         .map(a => `<span class="achievement-item">${a.name}</span>`)
         .join('');
-    
+
     setTimeout(() => {
         gameOverScreen.classList.add('active');
         achievementsPanel.style.display = 'none';
     }, 500);
-    
-    // Сохранение достижений
+
     saveAchievements();
 }
 
 function drawGame() {
-    // Очистка
     gameCtx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
-    
-    // Фон со звёздами
     drawStars();
-    
-    // Ракета
     drawRocket();
-    
-    // Метеориты
     drawMeteors();
-    
-    // Частицы
     drawParticles();
 }
 
@@ -786,75 +713,74 @@ function createExplosion(x, y) {
 function drawParticles() {
     for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
-        p.x += p.vx;
-        p.y += p.vy;
-        p.life -= 0.02;
-        
-        if (p.life <= 0) {
-            particles.splice(i, 1);
-            continue;
-        }
-        
         gameCtx.globalAlpha = p.life;
         gameCtx.fillStyle = p.color;
         gameCtx.beginPath();
         gameCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         gameCtx.fill();
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= 0.02;
+        if (p.life <= 0) particles.splice(i, 1);
     }
     gameCtx.globalAlpha = 1;
 }
 
 function updateUI() {
-    const score = meteorsDodged * combo;
-    
     gameTimeEl.textContent = elapsedTime.toFixed(1) + 'с';
     meteorCountEl.textContent = meteorsDodged;
     comboCountEl.textContent = 'x' + combo;
     bestScoreEl.textContent = bestScore.toFixed(1) + 'с';
-    scoreDisplayEl.textContent = score;
-    
-    // Анимация комбо
-    if (combo > 1) {
-        scoreDisplayEl.style.color = '#f9ca24';
-    } else {
-        scoreDisplayEl.style.color = '#4ecdc4';
-    }
+    scoreDisplayEl.textContent = meteorsDodged * combo;
 }
 
 function checkAchievements() {
-    const score = meteorsDodged * combo;
-    
-    for (let achievement of achievements) {
-        if (!achievement.unlocked && achievement.condition(elapsedTime, meteorsDodged, combo, score)) {
-            achievement.unlocked = true;
-            showAchievementPopup(achievement);
+    achievements.forEach(a => {
+        if (!a.unlocked && a.condition(elapsedTime, meteorsDodged, combo)) {
+            a.unlocked = true;
+            showAchievement(a);
         }
-    }
+    });
 }
 
-function showAchievementPopup(achievement) {
-    const popup = document.createElement('div');
-    popup.className = 'achievement-item';
-    popup.textContent = achievement.name + ': ' + achievement.desc;
-    achievementsList.appendChild(popup);
-    
-    // Автопрокрутка
-    achievementsList.scrollTop = achievementsList.scrollHeight;
+function showAchievement(achievement) {
+    const el = document.createElement('div');
+    el.className = 'achievement-popup';
+    el.textContent = achievement.name;
+    el.style.cssText = `
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 2rem;
+        font-weight: bold;
+        color: #f9ca24;
+        text-shadow: 0 0 20px rgba(249, 202, 36, 0.8);
+        pointer-events: none;
+        animation: comboFloat 1s ease-out forwards;
+    `;
+    gameCanvas.parentElement.appendChild(el);
+    setTimeout(() => el.remove(), 1000);
+}
+
+function saveAchievements() {
+    localStorage.setItem('gameAchievements', JSON.stringify(achievements));
 }
 
 function loadAchievements() {
     const stored = localStorage.getItem('gameAchievements');
     if (stored) {
-        unlockedAchievements = JSON.parse(stored);
-        // Восстанавливаем разблокированные достижения
-        unlockedAchievements.forEach(id => {
-            const achievement = achievements.find(a => a.id === id);
-            if (achievement) achievement.unlocked = true;
+        const saved = JSON.parse(stored);
+        saved.forEach((s, i) => {
+            if (s.unlocked) achievements[i].unlocked = true;
         });
     }
+    updateAchievementsUI();
 }
 
-function saveAchievements() {
-    const unlocked = achievements.filter(a => a.unlocked).map(a => a.id);
-    localStorage.setItem('gameAchievements', JSON.stringify(unlocked));
+function updateAchievementsUI() {
+    const unlocked = achievements.filter(a => a.unlocked);
+    achievementsList.innerHTML = unlocked
+        .map(a => `<span class="achievement-item">${a.name}</span>`)
+        .join('');
 }
