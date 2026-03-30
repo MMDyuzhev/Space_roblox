@@ -63,6 +63,8 @@ let modal, closeModal;
 document.addEventListener('DOMContentLoaded', () => {
     initFacts();
     initDrawing();
+    initGame();
+    initAllCardsModal();
 });
 
 // Инициализация фактов
@@ -433,14 +435,6 @@ const achievements = [
     { id: 'combo_10', name: '🔥 Комбо-мастер', desc: 'Набрать комбо x10', condition: (s, m, c) => c >= 10, unlocked: false },
     { id: 'score_100', name: '🏆 Чемпион', desc: 'Набрать 100 очков', condition: (s) => s >= 100, unlocked: false }
 ];
-
-// Инициализация игры
-document.addEventListener('DOMContentLoaded', () => {
-    initFacts();
-    initDrawing();
-    initGame();
-    initAllCardsModal();
-});
 
 function initGame() {
     // Получаем элементы
