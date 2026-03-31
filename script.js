@@ -1315,7 +1315,7 @@ function initSnake() {
     
     document.addEventListener('keydown', handleSnakeKeys);
     
-    gameInterval = setInterval(updateSnake, 150);
+    gameInterval = setInterval(updateSnake, 200);
 }
 
 function setSnakeDirection(dir) {
@@ -1353,10 +1353,17 @@ function updateSnake() {
         case 'right': head.x++; break;
     }
     
-    // Проверка столкновений
-    if (head.x < 0 || head.x >= gameCanvas2.width / SNAKE_GRID_SIZE ||
-        head.y < 0 || head.y >= gameCanvas2.height / SNAKE_GRID_SIZE ||
-        snake.some(seg => seg.x === head.x && seg.y === head.y)) {
+    // Проход сквозь стены - телепортация на другую сторону
+    const maxCols = gameCanvas2.width / SNAKE_GRID_SIZE;
+    const maxRows = gameCanvas2.height / SNAKE_GRID_SIZE;
+    
+    if (head.x < 0) head.x = maxCols - 1;
+    if (head.x >= maxCols) head.x = 0;
+    if (head.y < 0) head.y = maxRows - 1;
+    if (head.y >= maxRows) head.y = 0;
+    
+    // Проверка столкновений только с собой
+    if (snake.some(seg => seg.x === head.x && seg.y === head.y)) {
         snakeGameOver = true;
         showGameOver('Змейка', snakeScore);
         return;
