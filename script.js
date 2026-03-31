@@ -953,3 +953,808 @@ function updateQuizStats() {
 
 // Инициализация викторины
 document.addEventListener('DOMContentLoaded', initQuiz);
+
+// ========================================
+// МОДАЛЬНОЕ ОКНО С ВЫБОРОМ ИГР
+// ========================================
+
+let gamesModal, closeGamesModal, backToGames, closeCurrentGame;
+let gameContainer, currentGameTitle, gameCanvas2, gameCtx2, gameControls;
+let currentGame = null;
+let gameInterval = null;
+let score = 0;
+
+// Переменные для Тетриса
+let tetrisBoard = [];
+let tetrisPiece = null;
+let tetrisNextPiece = null;
+let tetrisScore = 0;
+let tetrisGameOver = false;
+const TETRIS_ROWS = 20;
+const TETRIS_COLS = 10;
+const TETRIS_BLOCK_SIZE = 25;
+
+// Переменные для Змейки
+let snake = [];
+let snakeDirection = 'right';
+let snakeFood = { x: 0, y: 0 };
+let snakeScore = 0;
+let snakeGameOver = false;
+const SNAKE_GRID_SIZE = 20;
+
+// Переменные для Гонок
+let playerCar = { x: 0, y: 0 };
+let enemyCars = [];
+let roadLines = [];
+let racingScore = 0;
+let racingSpeed = 5;
+let racingGameOver = false;
+
+// Переменные для Понга
+let pongPaddle1 = { y: 0 };
+let pongPaddle2 = { y: 0 };
+let pongBall = { x: 0, y: 0, dx: 0, dy: 0 };
+let pongScore1 = 0;
+let pongScore2 = 0;
+const PADDLE_HEIGHT = 80;
+const PADDLE_WIDTH = 10;
+const BALL_SIZE = 10;
+
+// Переменные для Кликера
+let clickerScore = 0;
+let clickerMultiplier = 1;
+let clickerButton = { x: 0, y: 0, radius: 60 };
+
+document.addEventListener('DOMContentLoaded', () => {
+    initGamesModal();
+});
+
+function initGamesModal() {
+    gamesModal = document.getElementById('gamesModal');
+    closeGamesModal = document.getElementById('closeGamesModal');
+    backToGames = document.getElementById('backToGames');
+    closeCurrentGame = document.getElementById('closeCurrentGame');
+    gameContainer = document.getElementById('gameContainer');
+    currentGameTitle = document.getElementById('currentGameTitle');
+    gameCanvas2 = document.getElementById('gameCanvas2');
+    gameControls = document.getElementById('gameControls');
+    
+    const gamesCard = document.getElementById('gamesCard');
+    
+    if (!gamesCard) return;
+    
+    gamesCard.addEventListener('click', () => {
+        gamesModal.classList.add('active');
+        gameContainer.classList.remove('active');
+        backToGames.classList.remove('visible');
+    });
+    
+    closeGamesModal.addEventListener('click', () => {
+        stopCurrentGame();
+        gamesModal.classList.remove('active');
+    });
+    
+    gamesModal.addEventListener('click', (e) => {
+        if (e.target === gamesModal) {
+            stopCurrentGame();
+            gamesModal.classList.remove('active');
+        }
+    });
+    
+    // Обработчики выбора игр
+    document.querySelectorAll('.game-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const game = item.dataset.game;
+            startGame(game);
+        });
+    });
+    
+    backToGames.addEventListener('click', () => {
+        stopCurrentGame();
+        gameContainer.classList.remove('active');
+        backToGames.classList.remove('visible');
+    });
+    
+    closeCurrentGame.addEventListener('click', () => {
+        stopCurrentGame();
+        gameContainer.classList.remove('active');
+        backToGames.classList.remove('visible');
+    });
+}
+
+function startGame(gameName) {
+    stopCurrentGame();
+    currentGame = gameName;
+    gameContainer.classList.add('active');
+    backToGames.classList.add('visible');
+    
+    // Настройка canvas
+    gameCanvas2.width = 400;
+    gameCanvas2.height = 500;
+    gameCtx2 = gameCanvas2.getContext('2d');
+    
+    switch(gameName) {
+        case 'tetris':
+            currentGameTitle.textContent = '🧱 Тетрис';
+            initTetris();
+            break;
+        case 'snake':
+            currentGameTitle.textContent = '🐍 Змейка';
+            initSnake();
+            break;
+        case 'racing':
+            currentGameTitle.textContent = '🏎️ Гонка Машин';
+            initRacing();
+            break;
+        case 'pong':
+            currentGameTitle.textContent = '🏓 Понг';
+            initPong();
+            break;
+        case 'clicker':
+            currentGameTitle.textContent = '👆 Кликер';
+            initClicker();
+            break;
+    }
+}
+
+function stopCurrentGame() {
+    if (gameInterval) {
+        clearInterval(gameInterval);
+        gameInterval = null;
+    }
+    currentGame = null;
+    gameControls.innerHTML = '';
+}
+
+// ========================================
+// ТЕТРИС
+// ========================================
+
+const TETRIS_PIECES = [
+    [[1, 1, 1, 1]], // I
+    [[1, 1], [1, 1]], // O
+    [[0, 1, 0], [1, 1, 1]], // T
+    [[1, 0, 0], [1, 1, 1]], // L
+    [[0, 0, 1], [1, 1, 1]], // J
+    [[0, 1, 1], [1, 1, 0]], // S
+    [[1, 1, 0], [0, 1, 1]]  // Z
+];
+
+const TETRIS_COLORS = ['#00f0f0', '#f0f000', '#a000f0', '#f0a000', '#0000f0', '#00f000', '#f00000'];
+
+function initTetris() {
+    tetrisBoard = Array(TETRIS_ROWS).fill().map(() => Array(TETRIS_COLS).fill(0));
+    tetrisScore = 0;
+    tetrisGameOver = false;
+    tetrisPiece = getRandomPiece();
+    tetrisNextPiece = getRandomPiece();
+    tetrisPiece.x = Math.floor(TETRIS_COLS / 2) - Math.floor(tetrisPiece.shape[0].length / 2);
+    tetrisPiece.y = 0;
+    
+    gameControls.innerHTML = `
+        <button id="tetrisLeft">⬅️ Влево</button>
+        <button id="tetrisRight">➡️ Вправо</button>
+        <button id="tetrisRotate">🔄 Поворот</button>
+        <button id="tetrisDown">⬇️ Вниз</button>
+    `;
+    
+    document.getElementById('tetrisLeft').addEventListener('click', () => moveTetris(-1, 0));
+    document.getElementById('tetrisRight').addEventListener('click', () => moveTetris(1, 0));
+    document.getElementById('tetrisRotate').addEventListener('click', rotateTetris);
+    document.getElementById('tetrisDown').addEventListener('click', () => moveTetris(0, 1));
+    
+    document.addEventListener('keydown', handleTetrisKeys);
+    
+    gameInterval = setInterval(updateTetris, 500);
+}
+
+function getRandomPiece() {
+    const index = Math.floor(Math.random() * TETRIS_PIECES.length);
+    return {
+        shape: TETRIS_PIECES[index],
+        color: TETRIS_COLORS[index],
+        x: 0,
+        y: 0
+    };
+}
+
+function handleTetrisKeys(e) {
+    if (currentGame !== 'tetris') return;
+    switch(e.key) {
+        case 'ArrowLeft': moveTetris(-1, 0); break;
+        case 'ArrowRight': moveTetris(1, 0); break;
+        case 'ArrowDown': moveTetris(0, 1); break;
+        case 'ArrowUp': rotateTetris(); break;
+    }
+}
+
+function moveTetris(dx, dy) {
+    if (tetrisGameOver) return;
+    tetrisPiece.x += dx;
+    tetrisPiece.y += dy;
+    if (checkTetrisCollision()) {
+        tetrisPiece.x -= dx;
+        tetrisPiece.y -= dy;
+        if (dy > 0) {
+            lockTetrisPiece();
+            clearTetrisLines();
+            tetrisPiece = tetrisNextPiece;
+            tetrisNextPiece = getRandomPiece();
+            tetrisPiece.x = Math.floor(TETRIS_COLS / 2) - Math.floor(tetrisPiece.shape[0].length / 2);
+            tetrisPiece.y = 0;
+            if (checkTetrisCollision()) {
+                tetrisGameOver = true;
+                showGameOver('Тетрис', tetrisScore);
+            }
+        }
+    }
+    drawTetris();
+}
+
+function rotateTetris() {
+    if (tetrisGameOver) return;
+    const rotated = tetrisPiece.shape[0].map((_, i) =>
+        tetrisPiece.shape.map(row => row[i]).reverse()
+    );
+    const oldShape = tetrisPiece.shape;
+    tetrisPiece.shape = rotated;
+    if (checkTetrisCollision()) {
+        tetrisPiece.shape = oldShape;
+    }
+    drawTetris();
+}
+
+function checkTetrisCollision() {
+    for (let y = 0; y < tetrisPiece.shape.length; y++) {
+        for (let x = 0; x < tetrisPiece.shape[y].length; x++) {
+            if (tetrisPiece.shape[y][x]) {
+                const newX = tetrisPiece.x + x;
+                const newY = tetrisPiece.y + y;
+                if (newX < 0 || newX >= TETRIS_COLS || newY >= TETRIS_ROWS ||
+                    (newY >= 0 && tetrisBoard[newY][newX])) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+function lockTetrisPiece() {
+    for (let y = 0; y < tetrisPiece.shape.length; y++) {
+        for (let x = 0; x < tetrisPiece.shape[y].length; x++) {
+            if (tetrisPiece.shape[y][x] && tetrisPiece.y + y >= 0) {
+                tetrisBoard[tetrisPiece.y + y][tetrisPiece.x + x] = tetrisPiece.color;
+            }
+        }
+    }
+}
+
+function clearTetrisLines() {
+    for (let y = TETRIS_ROWS - 1; y >= 0; y--) {
+        if (tetrisBoard[y].every(cell => cell !== 0)) {
+            tetrisBoard.splice(y, 1);
+            tetrisBoard.unshift(Array(TETRIS_COLS).fill(0));
+            tetrisScore += 100;
+            y++;
+        }
+    }
+}
+
+function updateTetris() {
+    if (!tetrisGameOver) {
+        moveTetris(0, 1);
+    }
+}
+
+function drawTetris() {
+    gameCtx2.fillStyle = '#0a0a1a';
+    gameCtx2.fillRect(0, 0, gameCanvas2.width, gameCanvas2.height);
+    
+    // Рисуем поле
+    const offsetX = (gameCanvas2.width - TETRIS_COLS * TETRIS_BLOCK_SIZE) / 2;
+    for (let y = 0; y < TETRIS_ROWS; y++) {
+        for (let x = 0; x < TETRIS_COLS; x++) {
+            if (tetrisBoard[y][x]) {
+                gameCtx2.fillStyle = tetrisBoard[y][x];
+                gameCtx2.fillRect(
+                    offsetX + x * TETRIS_BLOCK_SIZE,
+                    y * TETRIS_BLOCK_SIZE,
+                    TETRIS_BLOCK_SIZE - 1,
+                    TETRIS_BLOCK_SIZE - 1
+                );
+            }
+        }
+    }
+    
+    // Рисуем текущую фигуру
+    if (tetrisPiece) {
+        gameCtx2.fillStyle = tetrisPiece.color;
+        for (let y = 0; y < tetrisPiece.shape.length; y++) {
+            for (let x = 0; x < tetrisPiece.shape[y].length; x++) {
+                if (tetrisPiece.shape[y][x] && tetrisPiece.y + y >= 0) {
+                    gameCtx2.fillRect(
+                        offsetX + (tetrisPiece.x + x) * TETRIS_BLOCK_SIZE,
+                        (tetrisPiece.y + y) * TETRIS_BLOCK_SIZE,
+                        TETRIS_BLOCK_SIZE - 1,
+                        TETRIS_BLOCK_SIZE - 1
+                    );
+                }
+            }
+        }
+    }
+    
+    // Счёт
+    gameCtx2.fillStyle = '#f9ca24';
+    gameCtx2.font = '16px Arial';
+    gameCtx2.fillText(`Счёт: ${tetrisScore}`, 10, 20);
+}
+
+// ========================================
+// ЗМЕЙКА
+// ========================================
+
+function initSnake() {
+    snake = [{ x: 10, y: 10 }];
+    snakeDirection = 'right';
+    snakeScore = 0;
+    snakeGameOver = false;
+    spawnSnakeFood();
+    
+    gameControls.innerHTML = `
+        <button id="snakeUp">⬆️ Вверх</button>
+        <button id="snakeDown">⬇️ Вниз</button>
+        <button id="snakeLeft">⬅️ Влево</button>
+        <button id="snakeRight">➡️ Вправо</button>
+    `;
+    
+    document.getElementById('snakeUp').addEventListener('click', () => setSnakeDirection('up'));
+    document.getElementById('snakeDown').addEventListener('click', () => setSnakeDirection('down'));
+    document.getElementById('snakeLeft').addEventListener('click', () => setSnakeDirection('left'));
+    document.getElementById('snakeRight').addEventListener('click', () => setSnakeDirection('right'));
+    
+    document.addEventListener('keydown', handleSnakeKeys);
+    
+    gameInterval = setInterval(updateSnake, 150);
+}
+
+function setSnakeDirection(dir) {
+    const opposite = { up: 'down', down: 'up', left: 'right', right: 'left' };
+    if (opposite[dir] !== snakeDirection) {
+        snakeDirection = dir;
+    }
+}
+
+function handleSnakeKeys(e) {
+    if (currentGame !== 'snake') return;
+    switch(e.key) {
+        case 'ArrowUp': setSnakeDirection('up'); break;
+        case 'ArrowDown': setSnakeDirection('down'); break;
+        case 'ArrowLeft': setSnakeDirection('left'); break;
+        case 'ArrowRight': setSnakeDirection('right'); break;
+    }
+}
+
+function spawnSnakeFood() {
+    snakeFood = {
+        x: Math.floor(Math.random() * (gameCanvas2.width / SNAKE_GRID_SIZE)),
+        y: Math.floor(Math.random() * (gameCanvas2.height / SNAKE_GRID_SIZE))
+    };
+}
+
+function updateSnake() {
+    if (snakeGameOver) return;
+    
+    const head = { ...snake[0] };
+    switch(snakeDirection) {
+        case 'up': head.y--; break;
+        case 'down': head.y++; break;
+        case 'left': head.x--; break;
+        case 'right': head.x++; break;
+    }
+    
+    // Проверка столкновений
+    if (head.x < 0 || head.x >= gameCanvas2.width / SNAKE_GRID_SIZE ||
+        head.y < 0 || head.y >= gameCanvas2.height / SNAKE_GRID_SIZE ||
+        snake.some(seg => seg.x === head.x && seg.y === head.y)) {
+        snakeGameOver = true;
+        showGameOver('Змейка', snakeScore);
+        return;
+    }
+    
+    snake.unshift(head);
+    
+    // Проверка еды
+    if (head.x === snakeFood.x && head.y === snakeFood.y) {
+        snakeScore += 10;
+        spawnSnakeFood();
+    } else {
+        snake.pop();
+    }
+    
+    drawSnake();
+}
+
+function drawSnake() {
+    gameCtx2.fillStyle = '#0a0a1a';
+    gameCtx2.fillRect(0, 0, gameCanvas2.width, gameCanvas2.height);
+    
+    // Еда
+    gameCtx2.fillStyle = '#ff0000';
+    gameCtx2.beginPath();
+    gameCtx2.arc(
+        snakeFood.x * SNAKE_GRID_SIZE + SNAKE_GRID_SIZE / 2,
+        snakeFood.y * SNAKE_GRID_SIZE + SNAKE_GRID_SIZE / 2,
+        SNAKE_GRID_SIZE / 2,
+        0,
+        Math.PI * 2
+    );
+    gameCtx2.fill();
+    
+    // Змейка
+    gameCtx2.fillStyle = '#00f000';
+    snake.forEach((seg, i) => {
+        gameCtx2.fillRect(
+            seg.x * SNAKE_GRID_SIZE,
+            seg.y * SNAKE_GRID_SIZE,
+            SNAKE_GRID_SIZE - 1,
+            SNAKE_GRID_SIZE - 1
+        );
+    });
+    
+    // Счёт
+    gameCtx2.fillStyle = '#f9ca24';
+    gameCtx2.font = '16px Arial';
+    gameCtx2.fillText(`Счёт: ${snakeScore}`, 10, 20);
+}
+
+// ========================================
+// ГОНКА МАШИН
+// ========================================
+
+function initRacing() {
+    playerCar = { x: gameCanvas2.width / 2, y: gameCanvas2.height - 80 };
+    enemyCars = [];
+    roadLines = [];
+    racingScore = 0;
+    racingSpeed = 5;
+    racingGameOver = false;
+    
+    for (let i = 0; i < 10; i++) {
+        roadLines.push({ y: i * 60 });
+    }
+    
+    gameControls.innerHTML = `
+        <button id="raceLeft">⬅️ Влево</button>
+        <button id="raceRight">➡️ Вправо</button>
+    `;
+    
+    document.getElementById('raceLeft').addEventListener('click', () => { playerCar.x -= 60; });
+    document.getElementById('raceRight').addEventListener('click', () => { playerCar.x += 60; });
+    
+    document.addEventListener('keydown', handleRaceKeys);
+    
+    gameInterval = setInterval(updateRacing, 50);
+}
+
+function handleRaceKeys(e) {
+    if (currentGame !== 'racing') return;
+    if (e.key === 'ArrowLeft') playerCar.x -= 60;
+    if (e.key === 'ArrowRight') playerCar.x += 60;
+}
+
+function updateRacing() {
+    if (racingGameOver) return;
+    
+    // Движение дороги
+    roadLines.forEach(line => {
+        line.y += racingSpeed;
+        if (line.y > gameCanvas2.height) line.y = -60;
+    });
+    
+    // Спавн врагов
+    if (Math.random() < 0.02) {
+        enemyCars.push({
+            x: Math.random() * (gameCanvas2.width - 50),
+            y: -60,
+            width: 40,
+            height: 70
+        });
+    }
+    
+    // Движение врагов
+    enemyCars.forEach(car => {
+        car.y += racingSpeed;
+    });
+    
+    // Удаление прошедших врагов
+    enemyCars = enemyCars.filter(car => {
+        if (car.y > gameCanvas2.height) {
+            racingScore += 10;
+            racingSpeed += 0.1;
+            return false;
+        }
+        return true;
+    });
+    
+    // Проверка столкновений
+    enemyCars.forEach(car => {
+        if (playerCar.x < car.x + car.width &&
+            playerCar.x + 40 > car.x &&
+            playerCar.y < car.y + car.height &&
+            playerCar.y + 70 > car.y) {
+            racingGameOver = true;
+            showGameOver('Гонка Машин', racingScore);
+        }
+    });
+    
+    // Ограничение игрока
+    playerCar.x = Math.max(50, Math.min(gameCanvas2.width - 90, playerCar.x));
+    
+    drawRacing();
+}
+
+function drawRacing() {
+    gameCtx2.fillStyle = '#333';
+    gameCtx2.fillRect(0, 0, gameCanvas2.width, gameCanvas2.height);
+    
+    // Дорога
+    gameCtx2.fillStyle = '#555';
+    gameCtx2.fillRect(50, 0, gameCanvas2.width - 100, gameCanvas2.height);
+    
+    // Разметка
+    gameCtx2.fillStyle = '#fff';
+    roadLines.forEach(line => {
+        gameCtx2.fillRect(gameCanvas2.width / 2 - 5, line.y, 10, 30);
+    });
+    
+    // Игрок
+    gameCtx2.fillStyle = '#0066ff';
+    gameCtx2.fillRect(playerCar.x, playerCar.y, 40, 70);
+    
+    // Враги
+    gameCtx2.fillStyle = '#ff3300';
+    enemyCars.forEach(car => {
+        gameCtx2.fillRect(car.x, car.y, car.width, car.height);
+    });
+    
+    // Счёт
+    gameCtx2.fillStyle = '#f9ca24';
+    gameCtx2.font = '16px Arial';
+    gameCtx2.fillText(`Счёт: ${racingScore}`, 60, 30);
+}
+
+// ========================================
+// ПОНГ
+// ========================================
+
+function initPong() {
+    pongPaddle1 = { y: gameCanvas2.height / 2 - PADDLE_HEIGHT / 2 };
+    pongPaddle2 = { y: gameCanvas2.height / 2 - PADDLE_HEIGHT / 2 };
+    resetPongBall();
+    pongScore1 = 0;
+    pongScore2 = 0;
+    
+    gameControls.innerHTML = `
+        <button id="pongUp">⬆️ Вверх</button>
+        <button id="pongDown">⬇️ Вниз</button>
+    `;
+    
+    document.getElementById('pongUp').addEventListener('click', () => {
+        pongPaddle1.y = Math.max(0, pongPaddle1.y - 40);
+        drawPong();
+    });
+    document.getElementById('pongDown').addEventListener('click', () => {
+        pongPaddle1.y = Math.min(gameCanvas2.height - PADDLE_HEIGHT, pongPaddle1.y + 40);
+        drawPong();
+    });
+    
+    document.addEventListener('keydown', handlePongKeys);
+    
+    gameInterval = setInterval(updatePong, 16);
+}
+
+function handlePongKeys(e) {
+    if (currentGame !== 'pong') return;
+    if (e.key === 'ArrowUp') {
+        pongPaddle1.y = Math.max(0, pongPaddle1.y - 40);
+        drawPong();
+    }
+    if (e.key === 'ArrowDown') {
+        pongPaddle1.y = Math.min(gameCanvas2.height - PADDLE_HEIGHT, pongPaddle1.y + 40);
+        drawPong();
+    }
+}
+
+function resetPongBall() {
+    pongBall = {
+        x: gameCanvas2.width / 2,
+        y: gameCanvas2.height / 2,
+        dx: (Math.random() > 0.5 ? 5 : -5),
+        dy: (Math.random() > 0.5 ? 3 : -3)
+    };
+}
+
+function updatePong() {
+    pongBall.x += pongBall.dx;
+    pongBall.y += pongBall.dy;
+    
+    // Отскок от верха/низа
+    if (pongBall.y <= 0 || pongBall.y >= gameCanvas2.height - BALL_SIZE) {
+        pongBall.dy *= -1;
+    }
+    
+    // Отскок от ракеток
+    if (pongBall.x <= PADDLE_WIDTH + 10 &&
+        pongBall.y >= pongPaddle1.y &&
+        pongBall.y <= pongPaddle1.y + PADDLE_HEIGHT) {
+        pongBall.dx = Math.abs(pongBall.dx);
+    }
+    
+    if (pongBall.x >= gameCanvas2.width - PADDLE_WIDTH - BALL_SIZE - 10 &&
+        pongBall.y >= pongPaddle2.y &&
+        pongBall.y <= pongPaddle2.y + PADDLE_HEIGHT) {
+        pongBall.dx = -Math.abs(pongBall.dx);
+    }
+    
+    // Гол
+    if (pongBall.x < 0) {
+        pongScore2++;
+        resetPongBall();
+    }
+    if (pongBall.x > gameCanvas2.width) {
+        pongScore1++;
+        resetPongBall();
+    }
+    
+    // ИИ противника
+    const paddleCenter = pongPaddle2.y + PADDLE_HEIGHT / 2;
+    if (paddleCenter < pongBall.y - 30) {
+        pongPaddle2.y = Math.min(gameCanvas2.height - PADDLE_HEIGHT, pongPaddle2.y + 3);
+    } else if (paddleCenter > pongBall.y + 30) {
+        pongPaddle2.y = Math.max(0, pongPaddle2.y - 3);
+    }
+    
+    drawPong();
+}
+
+function drawPong() {
+    gameCtx2.fillStyle = '#0a0a1a';
+    gameCtx2.fillRect(0, 0, gameCanvas2.width, gameCanvas2.height);
+    
+    // Сетка посередине
+    gameCtx2.setLineDash([10, 10]);
+    gameCtx2.strokeStyle = '#333';
+    gameCtx2.beginPath();
+    gameCtx2.moveTo(gameCanvas2.width / 2, 0);
+    gameCtx2.lineTo(gameCanvas2.width / 2, gameCanvas2.height);
+    gameCtx2.stroke();
+    gameCtx2.setLineDash([]);
+    
+    // Ракетки
+    gameCtx2.fillStyle = '#00f0f0';
+    gameCtx2.fillRect(10, pongPaddle1.y, PADDLE_WIDTH, PADDLE_HEIGHT);
+    gameCtx2.fillRect(gameCanvas2.width - PADDLE_WIDTH - 10, pongPaddle2.y, PADDLE_WIDTH, PADDLE_HEIGHT);
+    
+    // Мяч
+    gameCtx2.fillStyle = '#fff';
+    gameCtx2.beginPath();
+    gameCtx2.arc(pongBall.x, pongBall.y, BALL_SIZE / 2, 0, Math.PI * 2);
+    gameCtx2.fill();
+    
+    // Счёт
+    gameCtx2.fillStyle = '#f9ca24';
+    gameCtx2.font = '24px Arial';
+    gameCtx2.fillText(pongScore1, gameCanvas2.width / 4, 40);
+    gameCtx2.fillText(pongScore2, 3 * gameCanvas2.width / 4, 40);
+}
+
+// ========================================
+// КЛИКЕР
+// ========================================
+
+function initClicker() {
+    clickerScore = 0;
+    clickerMultiplier = 1;
+    clickerButton = {
+        x: gameCanvas2.width / 2,
+        y: gameCanvas2.height / 2,
+        radius: 60
+    };
+    
+    gameControls.innerHTML = `
+        <button id="clickerUpgrade">⬆️ Улучшить (10)</button>
+        <button id="clickerReset">🔄 Сброс</button>
+    `;
+    
+    document.getElementById('clickerUpgrade').addEventListener('click', () => {
+        if (clickerScore >= 10) {
+            clickerScore -= 10;
+            clickerMultiplier += 1;
+            drawClicker();
+        }
+    });
+    
+    document.getElementById('clickerReset').addEventListener('click', () => {
+        clickerScore = 0;
+        clickerMultiplier = 1;
+        drawClicker();
+    });
+    
+    gameCanvas2.addEventListener('click', handleClickerClick);
+    
+    drawClicker();
+}
+
+function handleClickerClick(e) {
+    if (currentGame !== 'clicker') return;
+    
+    const rect = gameCanvas2.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const dist = Math.sqrt((x - clickerButton.x) ** 2 + (y - clickerButton.y) ** 2);
+    if (dist <= clickerButton.radius) {
+        clickerScore += clickerMultiplier;
+        drawClicker();
+    }
+}
+
+function drawClicker() {
+    gameCtx2.fillStyle = '#0a0a1a';
+    gameCtx2.fillRect(0, 0, gameCanvas2.width, gameCanvas2.height);
+    
+    // Кнопка
+    const gradient = gameCtx2.createRadialGradient(
+        clickerButton.x, clickerButton.y, 0,
+        clickerButton.x, clickerButton.y, clickerButton.radius
+    );
+    gradient.addColorStop(0, '#f9ca24');
+    gradient.addColorStop(1, '#f0932b');
+    
+    gameCtx2.fillStyle = gradient;
+    gameCtx2.beginPath();
+    gameCtx2.arc(clickerButton.x, clickerButton.y, clickerButton.radius, 0, Math.PI * 2);
+    gameCtx2.fill();
+    
+    // Тень
+    gameCtx2.strokeStyle = '#e55039';
+    gameCtx2.lineWidth = 3;
+    gameCtx2.stroke();
+    
+    // Счёт
+    gameCtx2.fillStyle = '#fff';
+    gameCtx2.font = '24px Arial';
+    gameCtx2.textAlign = 'center';
+    gameCtx2.fillText(`Счёт: ${clickerScore}`, clickerButton.x, clickerButton.y - 10);
+    gameCtx2.fillText(`Множитель: x${clickerMultiplier}`, clickerButton.x, clickerButton.y + 20);
+    gameCtx2.textAlign = 'left';
+    
+    // Инфо
+    gameCtx2.fillStyle = '#a29bfe';
+    gameCtx2.font = '14px Arial';
+    gameCtx2.fillText('Кликай по кнопке!', 10, 30);
+    gameCtx2.fillText('Улучшение: +1 к множителю (10 очков)', 10, 50);
+}
+
+// ========================================
+// ЭКРАН GAME OVER
+// ========================================
+
+function showGameOver(gameName, finalScore) {
+    const gameOverScreen = document.createElement('div');
+    gameOverScreen.className = 'game-over-screen active';
+    gameOverScreen.innerHTML = `
+        <h3>💥 Игра Окончена!</h3>
+        <p>Игра: ${gameName}</p>
+        <p>Ваш счёт: <strong style="color: #f9ca24;">${finalScore}</strong></p>
+        <button id="restartGameBtn2">🔄 Играть снова</button>
+    `;
+    
+    gameContainer.appendChild(gameOverScreen);
+    
+    document.getElementById('restartGameBtn2').addEventListener('click', () => {
+        gameOverScreen.remove();
+        startGame(currentGame);
+    });
+}

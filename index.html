@@ -86,6 +86,16 @@
                 </p>
                 <span class="character-role">Пилот</span>
             </div>
+
+            <div class="character-card" id="gamesCard">
+                <div class="character-avatar">🎮</div>
+                <h3 class="character-name">Выбор Игр</h3>
+                <p class="character-desc">
+                    Коллекция классических игр.
+                    Выбери игру по душе!
+                </p>
+                <span class="character-role">Аркада</span>
+            </div>
         </div>
     </div>
 
@@ -341,6 +351,52 @@
             </div>
             <div class="quiz-feedback" id="quizFeedback"></div>
             <button class="next-question-btn" id="nextQuestionBtn">➡️ Следующий вопрос</button>
+        </div>
+    </div>
+
+    <!-- Модальное окно с выбором игр -->
+    <div class="games-modal" id="gamesModal">
+        <div class="games-content">
+            <div class="games-header">
+                <h2>🎮 Выбор Игр</h2>
+                <button class="close-btn" id="closeGamesModal">&times;</button>
+            </div>
+            <div class="games-grid">
+                <div class="game-item" data-game="tetris">
+                    <div class="game-item-icon">🧱</div>
+                    <h3>Тетрис</h3>
+                    <p>Складывай фигуры в линии</p>
+                </div>
+                <div class="game-item" data-game="snake">
+                    <div class="game-item-icon">🐍</div>
+                    <h3>Змейка</h3>
+                    <p>Собирай еду и расти</p>
+                </div>
+                <div class="game-item" data-game="racing">
+                    <div class="game-item-icon">🏎️</div>
+                    <h3>Гонка Машин</h3>
+                    <p>Уклоняйся от препятствий</p>
+                </div>
+                <div class="game-item" data-game="pong">
+                    <div class="game-item-icon">🏓</div>
+                    <h3>Понг</h3>
+                    <p>Классический теннис</p>
+                </div>
+                <div class="game-item" data-game="clicker">
+                    <div class="game-item-icon">👆</div>
+                    <h3>Кликер</h3>
+                    <p>Кликай и зарабатывай</p>
+                </div>
+            </div>
+            <button class="back-btn" id="backToGames">↩️ Назад к выбору</button>
+        </div>
+        <div class="game-container" id="gameContainer">
+            <div class="game-container-header">
+                <h3 id="currentGameTitle">Игра</h3>
+                <button class="close-game-btn" id="closeCurrentGame">&times;</button>
+            </div>
+            <canvas id="gameCanvas2"></canvas>
+            <div class="game-controls" id="gameControls"></div>
         </div>
     </div>
 
